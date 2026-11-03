@@ -8,6 +8,7 @@ int P;
 int *v;
 int *vQSort;
 int *vNew;
+pthread_barrier_t barrier;
 
 void merge(int *source, int start, int mid, int end, int *destination) {
 	int iA = start;
@@ -114,6 +115,37 @@ void *thread_function(void *arg)
 
 	// implementati aici merge sort paralel
 
+	// Un merge nu se poate rupe in bucati: UN SINGUR THREAD TB SA L FACA de la cap la coada
+	// ---> impart MERGE-urile in THREAD-uri
+	// Ex: N = 8, P = 2
+	// width = 1 -> 4 merge-uri : [0,2), [2,4), [4,6), [6,8) --> t0 primele 2, t1 ultimele 2
+	// width = 2 -> 2 merge-uri : [0,4), [4,8) 
+	// width = 4 -> 1 merge: [0,8)
+
+	int width, *aux;
+	for (width = 1; width < N; width = 2 * width) {
+		int merges = N / (2 * width);
+		int start = thread_id * (double) merges / P;
+		int end;
+		if((thread_id + 1) * (double) merges / P < merges)
+			end = (thread_id + 1) * (double) merges / P;
+		else end = merges;
+
+		for (int k = start; k < end; k++) {
+			int i = k * 2 * width;
+			merge(v, i, i + width, i + 2 * width, vNew);
+		}
+		
+		pthread_barrier_wait(&barrier);
+
+		if(thread_id == 0){ // swap-ul tb sa se faca o sg data!
+			aux = v;
+			v = vNew;
+			vNew = aux;
+		}
+		pthread_barrier_wait(&barrier); // !!
+	}
+
 	pthread_exit(NULL);
 }
 
@@ -125,12 +157,13 @@ int main(int argc, char *argv[])
 	int i;
 	int thread_id[P];
 	pthread_t tid[P];
-
+	
 	// se sorteaza vectorul etalon
 	for (i = 0; i < N; i++)
 		vQSort[i] = v[i];
 	qsort(vQSort, N, sizeof(int), cmp);
 
+	pthread_barrier_init(&barrier, NULL, P);
 	// se creeaza thread-urile
 	for (i = 0; i < P; i++) {
 		thread_id[i] = i;
@@ -143,22 +176,23 @@ int main(int argc, char *argv[])
 	}
 
 	// merge sort clasic - trebuie paralelizat
-	int width, *aux;
-	for (width = 1; width < N; width = 2 * width) {
-		for (i = 0; i < N; i = i + 2 * width) {
-			merge(v, i, i + width, i + 2 * width, vNew);
-		}
+	// int width, *aux;
+	// for (width = 1; width < N; width = 2 * width) {
+	// 	for (i = 0; i < N; i = i + 2 * width) {
+	// 		merge(v, i, i + width, i + 2 * width, vNew);
+	// 	}
 
-		aux = v;
-		v = vNew;
-		vNew = aux;
-	}
+	// 	aux = v;
+	// 	v = vNew;
+	// 	vNew = aux;
+	// }
 
 	print();
 
 	free(v);
 	free(vQSort);
 	free(vNew);
+	pthread_barrier_destroy(&barrier);
 
 	return 0;
 }

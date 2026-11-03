@@ -7,6 +7,7 @@ int N;
 int P;
 int *v;
 int *vQSort;
+pthread_barrier_t barrier;
 
 void compare_vectors(int *a, int *b) {
 	int i;
@@ -79,7 +80,41 @@ void *thread_function(void *arg)
 {
 	int thread_id = *(int *)arg;
 
+	int start = thread_id * (double) N / P;
+	int end;
+	if((thread_id + 1) * (double) N / P < N)
+		end = (thread_id + 1) * (double) N / P;
+	else end = N;
+
 	// TODO: implementati aici OETS paralel
+	for (int k = 0; k < N; k++) {
+		int i;
+
+		if(start % 2 == 0)
+			i = start;
+		else i = start + 1;
+
+		for (; i < end && i < N - 1; i += 2) {
+			if(v[i] > v[i + 1]) {
+				int aux = v[i];
+				v[i] = v[i + 1];
+				v[i + 1] = aux;
+			}
+		}
+		pthread_barrier_wait(&barrier);
+		
+		if(start % 2 == 1)
+			i = start;
+		else i = start + 1;
+		for (; i < end && i < N - 1; i += 2) {
+			if(v[i] > v[i + 1]) {
+				int aux = v[i];
+				v[i] = v[i + 1];
+				v[i + 1] = aux;
+			}
+		}
+		pthread_barrier_wait(&barrier);
+	}
 
 	pthread_exit(NULL);
 }
@@ -98,6 +133,7 @@ int main(int argc, char *argv[])
 		vQSort[i] = v[i];
 	qsort(vQSort, N, sizeof(int), cmp);
 
+	pthread_barrier_init(&barrier, NULL, P);
 	// se creeaza thread-urile
 	for (i = 0; i < P; i++) {
 		thread_id[i] = i;
@@ -131,6 +167,6 @@ int main(int argc, char *argv[])
 
 	free(v);
 	free(vQSort);
-
+	pthread_barrier_destroy(&barrier);
 	return 0;
 }

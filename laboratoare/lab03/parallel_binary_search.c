@@ -5,6 +5,7 @@
 
 #define INSIDE -1 // daca numarul cautat este in interiorul intervalului
 #define OUTSIDE -2 // daca numarul cautat este in afara intervalului
+pthread_barrier_t barrier;
 
 struct my_arg {
 	int id;
@@ -42,11 +43,75 @@ void binary_search() {
 void *f(void *arg)
 {
 	struct my_arg* data = (struct my_arg*) arg;
+	int id = data->id;
+	int P = data->P;
+	int number = data->number;
+	int *v = data->v;
 
-	while (*data->keep_running) {
-		int size = *data->right - *data->left;
+	// TODO: implementati parallel binary search
+	while (1) {
+		int left = *data->left;
+		int right = *data->right;
+		
+		if (!*data->keep_running)
+			break;
+		if (left > right) {
+			if (id == 0) printf("Number not found\n");
+			break;
+		}
 
-		// TODO: implementati parallel binary search
+		int size = right - left;
+		int start = id * (double) size / P;
+		int end;
+		if((id + 1) * (double) size / P < size)
+			end = (id + 1) * (double) size / P;
+		else end = size;
+
+		start += left; // !!!
+		end += left;
+
+
+		if(v[start] == number){
+			data->found[id] = start;
+		}
+		else if(v[end] == number){
+			data->found[id] = end;
+		}
+		else if(v[start] < number && number < v[end]){
+			data->found[id] = INSIDE;
+		}
+		else data->found[id] = OUTSIDE;
+
+		pthread_barrier_wait(&barrier);
+
+
+		if(id == 0){
+			int inside = 0;
+			for(int p = 0; p < P; p++){
+				if(data->found[p] >= 0){
+					printf("Number found at position %d\n", data->found[p]);
+					*data->keep_running = 0;
+					inside = 1;
+					break;
+				}
+
+				if(data->found[p] == INSIDE){
+					// intervalul thread-ului p
+					int s = left + p * (double) size / P;
+					int e = left + (p + 1) * (double) size / P;
+					if (e > right) e = right;
+
+					*data->left = s + 1;
+					*data->right = e - 1;
+					inside = 1;
+				}
+			}
+			if(!inside){
+				printf("Number not found\n");
+				*data->keep_running = 0;
+			}
+		}
+		pthread_barrier_wait(&barrier);
 	}
 
 	return NULL;
@@ -83,7 +148,7 @@ int main(int argc, char *argv[])
 
 	keep_running = 1;
 	left = 0;
-	right = N;
+	right = N - 1;
 
 	v = (int*) malloc(N * sizeof(int));
 	threads = (pthread_t*) malloc(P * sizeof(pthread_t));
@@ -96,6 +161,7 @@ int main(int argc, char *argv[])
 
 	display_vector(v, N);
 
+	pthread_barrier_init(&barrier, NULL, P);
 	for (int i = 0; i < P; i++) {
 		arguments[i].id = i;
 		arguments[i].N = N;
@@ -127,6 +193,9 @@ int main(int argc, char *argv[])
 	free(v);
 	free(threads);
 	free(arguments);
+	
+	free(found);
+	pthread_barrier_destroy(&barrier);
 
 	return 0;
 }
