@@ -22,28 +22,28 @@ int main(int argc, char *argv[]) {
     arr[i] = i;
   }
 
-  for (int i = 0; i < array_size; i++) {
-    printf("%d", arr[i]);
-    if (i != array_size - 1) {
-      printf(" ");
-    } else {
-      printf("\n");
-    }
-  }
+  // for (int i = 0; i < array_size; i++) {
+  //   printf("%d", arr[i]);
+  //   if (i != array_size - 1) {
+  //     printf(" ");
+  //   } else {
+  //     printf("\n");
+  //   }
+  // }
 
   // Vom folosi varianta implementata serial ca referinta (baseline) pentru calculul acceleratiei (speedup-ului)
   for (int i = 0; i < array_size; i++) {
     arr[i] += 100;
   }
 
-  for (int i = 0; i < array_size; i++) {
-    printf("%d", arr[i]);
-    if (i != array_size - 1) {
-      printf(" ");
-    } else {
-      printf("\n");
-    }
-  }
+  // for (int i = 0; i < array_size; i++) {
+  //   printf("%d", arr[i]);
+  //   if (i != array_size - 1) {
+  //     printf(" ");
+  //   } else {
+  //     printf("\n");
+  //   }
+  // }
 
   return 0;
 }

@@ -1,14 +1,29 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-/*
-    schelet pentru exercitiul 5
-*/
+#include <limits.h>
 
 int *arr;
 int array_size;
 int num_threads;
+
+void *f(void *arg) {
+  long id = *(long *)arg;
+
+  int start = id * (double) array_size / num_threads;
+  
+  int end;
+  if((id + 1) * (double) array_size / num_threads <  array_size)
+    end = (id + 1) * (double) array_size / num_threads;
+  else end = array_size;
+
+  for (int i = start; i < end; i++) {
+    arr[i] += 100;
+  }
+  pthread_exit(NULL);
+}
+
+
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -24,28 +39,53 @@ int main(int argc, char *argv[]) {
     arr[i] = i;
   }
 
-  for (int i = 0; i < array_size; i++) {
-    printf("%d", arr[i]);
-    if (i != array_size - 1) {
-      printf(" ");
-    } else {
-      printf("\n");
-    }
-  }
+  // for (int i = 0; i < array_size; i++) {
+  //   printf("%d", arr[i]);
+  //   if (i != array_size - 1) {
+  //     printf(" ");
+  //   } else {
+  //     printf("\n");
+  //   }
+  // }
 
+
+  pthread_t threads[num_threads];
+  int r;
+  long id;
+  void *status;
+  long ids[num_threads];
   // TODO: aceasta operatie va fi paralelizata cu num_threads fire de executie
-  for (int i = 0; i < array_size; i++) {
-    arr[i] += 100;
-  }
+  // for (int i = 0; i < array_size; i++) {
+  //   arr[i] += 100;
+  // }
 
-  for (int i = 0; i < array_size; i++) {
-    printf("%d", arr[i]);
-    if (i != array_size - 1) {
-      printf(" ");
-    } else {
-      printf("\n");
+  for(id = 0; id < num_threads; id++) {
+    ids[id] = id;
+    r = pthread_create(&threads[id], NULL, f, &ids[id]);
+    if (r) {
+      printf("Eroare la crearea thread-ului %ld\n", id);
+      exit(-1);
     }
   }
+
+  for (id = 0; id < num_threads; id++) {
+    r = pthread_join(threads[id], &status);
+
+    if (r) {
+      printf("Eroare la asteptarea thread-ului %ld\n", id);
+      exit(-1);
+    }
+  }
+
+
+  // for (int i = 0; i < array_size; i++) {
+  //   printf("%d", arr[i]);
+  //   if (i != array_size - 1) {
+  //     printf(" ");
+  //   } else {
+  //     printf("\n");
+  //   }
+  // }
 
   return 0;
 }
