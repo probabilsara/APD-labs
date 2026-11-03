@@ -12,7 +12,7 @@ void *f(void *arg) {
 }
 
 void *g(void *arg) {
-  printf("Saluta din functia g!\n");
+  printf("Salut din functia g!\n");
   pthread_exit(NULL);
 }
 

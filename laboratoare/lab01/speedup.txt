@@ -1,0 +1,13 @@
+Speedup = T_serial / T_P == O(N) / O(N/P)
+
+Timpii totali:
+P = 3,522 / 3,089 = 1,14
+P = 3,522 / 3,008 = 1,17
+
+Timpii ce masoara doar PORTIUNEA PARALELIZATA:
+S(2) = 0,953 / 0,482 = 1,98
+S(3) = 0,953 / 0,330 = 2,89
+
+Timpii ce masoara tot programul:
+S(2) = 2,863/ 2,290 = 1,25
+S(2) = 2,863 / 2,151 = 1,33
