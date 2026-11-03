@@ -4,49 +4,40 @@
 #include <unistd.h>
 
 // nr core-uri laptopului mue: 16
-//#define NUM_THREADS 50
+#define NUM_THREADS 2
 
 void *f(void *arg) {
-  long id = *(long *)arg;
-
-  for(int i = 0; i < 100; i++){
-    printf("Hello World %d din thread-ul %ld!\n", i, id);
-  }
-
+  printf("Hello World din functia f!\n");
   pthread_exit(NULL);
 }
 
+void *g(void *arg) {
+  printf("Saluta din functia g!\n");
+  pthread_exit(NULL);
+}
+
+
 int main(int argc, char *argv[]) {
 
-  long cores = sysconf(_SC_NPROCESSORS_CONF);
-  //printf("Numarul de core-uri de pe masina este: %ld \n", cores);
-
-  const int NUM_THREADS = cores;
   pthread_t threads[NUM_THREADS];
-  int r;
-  long id;
   void *status;
-  long ids[NUM_THREADS];
 
 
-  for (id = 0; id < NUM_THREADS; id++) {
-    ids[id] = id;
-    r = pthread_create(&threads[id], NULL, f, &ids[id]);
-
-    if (r) {
-      printf("Eroare la crearea thread-ului %ld\n", id);
-      exit(-1);
-    }
+  int r = pthread_create(&threads[0], NULL, f, NULL);
+  if (r) {
+    printf("Eroare la crearea thread-ului 0");
+    exit(-1);
   }
 
-  for (id = 0; id < NUM_THREADS; id++) {
-    r = pthread_join(threads[id], &status);
-
-    if (r) {
-      printf("Eroare la asteptarea thread-ului %ld\n", id);
-      exit(-1);
-    }
+  r = pthread_create(&threads[1], NULL, g, NULL);
+  if (r) {
+    printf("Eroare la crearea thread-ului 0");
+    exit(-1);
   }
+
+    for(int i = 0; i < NUM_THREADS; i++){
+      pthread_join(threads[i], &status);
+    }
 
   return 0;
 }
